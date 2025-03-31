@@ -14,15 +14,14 @@ import pygame
 # Initialiser Pygame
 pygame.init()
 
-
-DEBUG =1 
+DEBUG = 1
 curdir = path.dirname(__file__) # directory for the current script
 _basedir = path.dirname(curdir) # base directory for the application
 _mediadir = path.join(_basedir, "media")
 
 # Charger les sons de batterie
 sounds = [
-    pygame.mixer.Sound(f"{_mediadir}/{i}.wav") for i in range(1,17)
+    pygame.mixer.Sound(f"{_mediadir}/{i}.wav") for i in range(1, 17)
 ]
 
 # Son du métronome
@@ -35,7 +34,6 @@ key_mapping = {
     ord('g'): 4, ord('h'): 5, ord('j'): 6, ord('k'): 7,
     ord('a'): 8, ord('z'): 9, ord('e'): 10, ord('r'): 11,
     ord('t'): 12, ord('y'): 13, ord('u'): 14, ord('i'): 15
-
 }
 
 # Motif rythmique (True si le pad est activé, False sinon)
@@ -61,10 +59,10 @@ pattern_01[10][0] = True  # 11.1
 
 def debug(msg="", title="", bell=True):
     if DEBUG:
-        print("%s: %s" %(title, msg))
+        print("%s: %s" % (title, msg))
         if bell:
             print("\a")
-    
+
 #------------------------------------------------------------------------------
 
 def beep():
@@ -121,12 +119,11 @@ class Player(object):
 
         if self.playing:
             self.current_step = (self.current_step + 1) % 16
-        
+
         time.sleep(self.step_duration)
 
     #----------------------------------------
-#========================================
-
+#=========================================
 
 class MainApp(object):
     def __init__(self, stdscr):
@@ -135,7 +132,8 @@ class MainApp(object):
         self.cursor_position = [0, 0]
         self.last_played_pad = self.cursor_position[0]
         self.pad_auto_played = True
-        
+        self.mode_lst = ["Normal", "Select", "Transport"]  # Liste des modes
+        self.mode_index = 0  # Index du mode actuel
         curses.curs_set(0)
         self.stdscr.nodelay(1)
         self.stdscr.timeout(100)
@@ -167,7 +165,7 @@ class MainApp(object):
     #----------------------------------------
 
     def main(self):
-        # Boucle principale
+        """Boucle principale de l'application."""
         running = True
         self.player.playing = False
         self.update_screen()
@@ -178,8 +176,9 @@ class MainApp(object):
                 self.stdscr.timeout(100)
 
             key = self.stdscr.getch()
-            current_time = time.time()
 
+            # To debug keycode
+            # self.show_status(f"Key: {key}")
             if key == ord('Q'):
                 running = False
             elif key == ord(' '):
@@ -196,39 +195,45 @@ class MainApp(object):
                 self.player.cycle_counter = 0
                 self.show_status("Stopped")
             elif key == curses.KEY_LEFT:
-                if self.cursor_position[1] > 0:
-                    self.cursor_position[1] -= 1
-                else:
-                    beep()
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    if self.cursor_position[1] > 0:
+                        self.cursor_position[1] -= 1
+                    else:
+                        beep()
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_RIGHT:
-                if self.cursor_position[1] < 15:
-                    self.cursor_position[1] += 1
-                else:
-                    beep()
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    if self.cursor_position[1] < 15:
+                        self.cursor_position[1] += 1
+                    else:
+                        beep()
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_UP:
-                if self.cursor_position[0] > 0:
-                    self.cursor_position[0] -= 1
-                    if self.pad_auto_played:
-                        sounds[self.cursor_position[0]].play()
-                else:
-                    beep()
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    if self.cursor_position[0] > 0:
+                        self.cursor_position[0] -= 1
+                        if self.pad_auto_played:
+                            sounds[self.cursor_position[0]].play()
+                    else:
+                        beep()
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_DOWN:
-                if self.cursor_position[0] < 15:
-                    self.cursor_position[0] += 1
-                    if self.pad_auto_played:
-                        sounds[self.cursor_position[0]].play()
-                else:
-                    beep()
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    if self.cursor_position[0] < 15:
+                        self.cursor_position[0] += 1
+                        if self.pad_auto_played:
+                            sounds[self.cursor_position[0]].play()
+                    else:
+                        beep()
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_ENTER or key == 10:
-                self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = True
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = True
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
             elif key == curses.KEY_BACKSPACE:
-                self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
+                if self.mode_lst[self.mode_index] == "Normal":
+                    self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
+                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
             elif key in key_mapping:
                 sounds[key_mapping[key]].play()
                 self.last_played_pad = key_mapping[key]
@@ -253,6 +258,20 @@ class MainApp(object):
                 self.player.change_bpm(max(5, self.player.bpm - 5))
                 self.show_status(f"BPM: {self.player.bpm}")
 
+            elif key == 9:  # Tab pour passer d'un mode à un autre
+                if self.mode_index < len(self.mode_lst) -1:
+                    self.mode_index += 1
+                    self.show_status(f"Mode: {self.mode_lst[self.mode_index]}")
+                else:
+                    beep()
+            elif key == 353:  # Shift+Tab pour passer d'un mode à un autre
+                if self.mode_index >0:
+                    self.mode_index -= 1
+                    self.show_status(f"Mode: {self.mode_lst[self.mode_index]}")
+                else:
+                    beep()
+
+            # Jouer le pattern et le metronome
             if self.player.playing or self.player.metronome_active:
                 if self.player.playing:
                     self.player.play_pattern(sounds)
@@ -262,7 +281,7 @@ class MainApp(object):
 
     #----------------------------------------
 
-#========================================
+#=========================================
 
 def main(stdscr):
     app = MainApp(stdscr)
@@ -274,3 +293,4 @@ if __name__ == "__main__":
     curses.wrapper(main)
 
 #----------------------------------------
+
