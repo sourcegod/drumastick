@@ -99,6 +99,16 @@ class Player(object):
             metronome_sound2.play()
 
     #----------------------------------------
+    
+    def stop(self):
+        """ Stop pattern and metronome """
+        self.playing = False
+        self.metronome_active = False
+        self.current_step = 0
+        self.beat_counter =0
+        self.cycle_counter =0
+
+    #----------------------------------------
 
     def change_bpm(self, new_bpm):
         """Change le tempo du motif."""
@@ -134,6 +144,8 @@ class MainApp(object):
         self.pad_auto_played = True
         self.mode_lst = ["Normal", "Select", "Transport"]  # Liste des modes
         self.mode_index = 0  # Index du mode actuel
+        self.curmode = self.mode_lst[self.mode_index] # le mode courant
+        
         curses.curs_set(0)
         self.stdscr.nodelay(1)
         self.stdscr.timeout(100)
@@ -188,28 +200,27 @@ class MainApp(object):
                     self.player.beat_counter = 0 if self.player.current_step == 0 else (self.player.current_step - 1) // 4
                 self.show_status("Playing" if self.player.playing else "Paused")
             elif key == ord('v'):
-                self.player.playing = False
-                self.player.metronome_active = False
-                self.player.current_step = 0
-                self.player.beat_counter = 0
-                self.player.cycle_counter = 0
+                self.player.stop()
                 self.show_status("Stopped")
             elif key == curses.KEY_LEFT:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     if self.cursor_position[1] > 0:
                         self.cursor_position[1] -= 1
                     else:
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_RIGHT:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     if self.cursor_position[1] < 15:
                         self.cursor_position[1] += 1
                     else:
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_UP:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     if self.cursor_position[0] > 0:
                         self.cursor_position[0] -= 1
                         if self.pad_auto_played:
@@ -218,7 +229,8 @@ class MainApp(object):
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_DOWN:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     if self.cursor_position[0] < 15:
                         self.cursor_position[0] += 1
                         if self.pad_auto_played:
@@ -227,11 +239,13 @@ class MainApp(object):
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
             elif key == curses.KEY_ENTER or key == 10:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = True
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
             elif key == curses.KEY_BACKSPACE:
-                if self.mode_lst[self.mode_index] == "Normal":
+                if  self.curmode == "Normal"\
+                        or self.curmode == "Select":
                     self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
             elif key in key_mapping:
