@@ -29,12 +29,21 @@ metronome_sound1 = pygame.mixer.Sound(f"{_mediadir}/hi_wood_block_mono.wav")
 metronome_sound2 = pygame.mixer.Sound(f"{_mediadir}/low_wood_block_mono.wav")
 
 # Mappage des touches du clavier aux pads
-key_mapping = {
+key_mapping_1 = {
     ord('q'): 0, ord('s'): 1, ord('d'): 2, ord('f'): 3,
     ord('g'): 4, ord('h'): 5, ord('j'): 6, ord('k'): 7,
     ord('a'): 8, ord('z'): 9, ord('e'): 10, ord('r'): 11,
     ord('t'): 12, ord('y'): 13, ord('u'): 14, ord('i'): 15
 }
+
+# Mappage des touches du clavier en majuscule aux pads
+key_mapping_2 = {
+    ord('Q'): 0, ord('S'): 1, ord('D'): 2, ord('F'): 3,
+    ord('G'): 4, ord('H'): 5, ord('J'): 6, ord('K'): 7,
+    ord('A'): 8, ord('Z'): 9, ord('E'): 10, ord('R'): 11,
+    ord('T'): 12, ord('Y'): 13, ord('U'): 14, ord('I'): 15
+}
+
 
 # Motif rythmique (True si le pad est activé, False sinon)
 pattern = [[False] * 16 for _ in range(16)]
@@ -191,7 +200,7 @@ class MainApp(object):
 
             # To debug keycode
             # self.show_status(f"Key: {key}")
-            if key == ord('Q'):
+            if key == 24: # Ctrl+X
                 running = False
             elif key == ord(' '):
                 self.player.playing = not self.player.playing
@@ -248,9 +257,26 @@ class MainApp(object):
                         or self.curmode == "Select":
                     self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
-            elif key in key_mapping:
-                sounds[key_mapping[key]].play()
-                self.last_played_pad = key_mapping[key]
+            # Pads Audition
+            elif key in key_mapping_1\
+                    and self.curmode == "Normal":
+                sounds[key_mapping_1[key]].play()
+                self.last_played_pad = key_mapping_1[key]
+            
+            # """
+            # Pads selection
+            elif key in key_mapping_1\
+                    and self.curmode == "Select":
+                self.player.pattern[self.cursor_position[0]][key_mapping_1[key]] = True
+                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
+
+            # Pads deselection
+            elif key in key_mapping_2\
+                    and self.curmode == "Select":
+                self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
+                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
+            # """
+
             elif key == ord('l'):
                 sounds[self.cursor_position[0]].play()
                 self.last_played_pad = self.cursor_position[0]
@@ -275,13 +301,15 @@ class MainApp(object):
             elif key == 9:  # Tab pour passer d'un mode à un autre
                 if self.mode_index < len(self.mode_lst) -1:
                     self.mode_index += 1
-                    self.show_status(f"Mode: {self.mode_lst[self.mode_index]}")
+                    self.curmode = self.mode_lst[self.mode_index]
+                    self.show_status(f"Mode: {self.curmode}")
                 else:
                     beep()
             elif key == 353:  # Shift+Tab pour passer d'un mode à un autre
                 if self.mode_index >0:
                     self.mode_index -= 1
-                    self.show_status(f"Mode: {self.mode_lst[self.mode_index]}")
+                    self.curmode = self.mode_lst[self.mode_index]
+                    self.show_status(f"Mode: {self.curmode}")
                 else:
                     beep()
 
