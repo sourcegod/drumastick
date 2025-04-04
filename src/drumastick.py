@@ -100,7 +100,6 @@ class DrumPlayer(object):
 
     #------------------------------------------------------------------------------
     def start_thread(self):
-        
         if self._play_thread: return
         self.stop_event.clear()
         self._play_thread = threading.Thread(target=self._run)
@@ -165,8 +164,10 @@ class DrumPlayer(object):
     def stop_all(self):      
         self.playing = False
         self.metronome_active = False
-        self.current_step =0
         self.stop_thread()
+        self.current_step =0
+        self.beat_counter =0
+        self.cycle_counter =0
 
     #------------------------------------------------------------------------------
 
@@ -352,17 +353,21 @@ class MainApp(object):
                 running = False
             elif key == ord(' '):
                 self.player.playing = not self.player.playing
-                if self.player.playing and self.player.metronome_active:
-                    self.player.cycle_counter = self.player.current_step
-                    self.player.beat_counter = 0 if self.player.current_step == 0 else (self.player.current_step - 1) // 4
                 if self.player.playing:
                     self.player.play_pattern()
                 else:
                     self.player.stop_pattern()
                 self.show_status("Playing" if self.player.playing else "Paused")
+            elif key == ord('c'):
+                self.player.metronome_active = not self.player.metronome_active
+                if self.player.metronome_active:
+                    self.player.play_click()
+                else:
+                    self.player.stop_click()
+                self.show_status("Start Clicking" if self.player.playing else "Stop Clicking")
             elif key == ord('v'):
                 self.player.stop_all()
-                self.show_status("Stopped")
+                self.show_status("Stopped All")
             elif key == curses.KEY_LEFT:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
