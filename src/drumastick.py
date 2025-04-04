@@ -10,6 +10,7 @@ from os import path
 import time
 import curses
 import pygame
+import threading
 
 # Initialiser Pygame
 pygame.init()
@@ -79,6 +80,149 @@ def beep():
 
 #------------------------------------------------------------------------------
 
+class DrumPlayer(object):
+    """ Manage the player in a thread """
+    def __init__(self, sound_manager=None, ui_app=None):
+        self._play_thread = None
+        self.stop_event = threading.Event()
+        self.sound_man = sound_manager
+        self.ui_app = ui_app
+        self.playing = False
+        self.metronome_active = False
+        self.bpm = 100
+        self.current_step =0
+        self.step_duration = 60.0 / self.bpm / 4
+        self.beat_counter =0
+        self.cycle_counter =0
+        self.volume = 0.8
+        # self.drum_pads = [[False] * 16 for _ in range(16)]
+        self.pattern = pattern
+
+    #------------------------------------------------------------------------------
+    def start_thread(self):
+        
+        if self._play_thread: return
+        self.stop_event.clear()
+        self._play_thread = threading.Thread(target=self._run)
+        self._play_thread.start()
+
+    #------------------------------------------------------------------------------
+
+    def stop_thread(self):
+        self.stop_event.set()
+        if self._play_thread:
+            self._play_thread.join()
+            self._play_thread = None
+        
+    #------------------------------------------------------------------------------
+
+
+    def play_pattern(self):
+        clicked =0
+        if self.metronome_active:
+            self.stop_thread()
+            self.stop_click()
+            clicked =1
+        
+        self.playing = True
+        if clicked:
+            self.play_click()
+        self.start_thread()
+
+    #------------------------------------------------------------------------------
+
+    def stop_pattern(self):
+        self.playing = False
+        if not self.metronome_active:
+            self.stop_thread()
+           
+    #------------------------------------------------------------------------------
+
+
+    def play_click(self):
+        self.metronome_active = True
+        if self.playing:
+            self.cycle_counter = self.current_step
+            if self.cycle_counter == 0: 
+                self.beat_counter = 0
+            else:
+                self.beat_counter = self.cycle_counter // 4
+
+        elif not self.playing and not self._play_thread:
+            self.start_thread()
+
+    #------------------------------------------------------------------------------
+    
+    def stop_click(self):
+        self.metronome_active = False
+        if not self.playing:
+            self.stop_thread()
+        self.beat_counter =0
+        self.cycle_counter =0
+
+    #------------------------------------------------------------------------------
+    
+    def stop_all(self):      
+        self.playing = False
+        self.metronome_active = False
+        self.current_step =0
+        self.stop_thread()
+
+    #------------------------------------------------------------------------------
+
+    def _run(self):
+        while (self.playing or self.metronome_active) and not self.stop_event.is_set():
+            if self.playing:
+                # self.step_duration = 60 / self.bpm / 4 # Temporary
+                for i in range(16):
+                    if self.stop_event.is_set():
+                        return
+                    # self.ui_app.show_status(f"Playing line: {i}")
+                    if self.pattern[i][self.current_step]:
+                        # self.sound_man.play_sound(snd)
+                        sounds[i].play()
+                # avance le sequencer d'un pas
+                self.current_step = (self.current_step +1) % 16
+ 
+            if self.metronome_active and self.cycle_counter % 4 == 0:
+                self.play_metronome()
+                self.beat_counter = (self.beat_counter + 1) % 4
+
+            self.cycle_counter = (self.cycle_counter + 1) % 16
+            if self.cycle_counter == 0:
+                self.beat_counter = 0
+
+                
+            # attendre le temps d'un pas
+            time.sleep(self.step_duration)
+        # self.ui_app.show_status("Stopped Player")
+
+    #------------------------------------------------------------------------------
+
+    def set_bpm(self, bpm):
+        self.bpm = bpm
+        self.step_duration = 60.0 / self.bpm / 4
+
+    #------------------------------------------------------------------------------
+
+    def play_metronome(self):
+        """Joue le son du métronome."""
+        if self.beat_counter == 0:
+            metronome_sound1.play()
+        else:
+            metronome_sound2.play()
+
+    #----------------------------------------
+ 
+    def set_volume(self, volume):
+        self.volume = volume
+        self.sound_man.set_volume(volume)
+
+    #------------------------------------------------------------------------------
+
+
+#=========================================
+
 class Player(object):
     def __init__(self, bpm=100):
         self.bpm = bpm
@@ -142,12 +286,14 @@ class Player(object):
         time.sleep(self.step_duration)
 
     #----------------------------------------
+
 #=========================================
 
 class MainApp(object):
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.player = Player()
+        self.player = DrumPlayer()
+        # self.player = Player()
         self.cursor_position = [0, 0]
         self.last_played_pad = self.cursor_position[0]
         self.pad_auto_played = True
@@ -156,8 +302,8 @@ class MainApp(object):
         self.curmode = self.mode_lst[self.mode_index] # le mode courant
         
         curses.curs_set(0)
-        self.stdscr.nodelay(1)
-        self.stdscr.timeout(100)
+        # self.stdscr.timeout(100) # pour rafraîchir l'écran chaque 100 milisecondes
+        self.stdscr.nodelay(0) # blocking getch until key is pressed
 
     #----------------------------------------
 
@@ -187,29 +333,35 @@ class MainApp(object):
 
     def main(self):
         """Boucle principale de l'application."""
+        
         running = True
         self.player.playing = False
         self.update_screen()
+        
+        # curses.raw() # for no interrupt mode like suspend, quit
         while running:
-            if self.player.playing or self.player.metronome_active:
-                self.stdscr.timeout(0)
-            else:
-                self.stdscr.timeout(100)
-
+            
             key = self.stdscr.getch()
 
             # To debug keycode
             # self.show_status(f"Key: {key}")
-            if key == 24: # Ctrl+X
+            if key == ord('X'):
+                self.player.stop_all()
+                running = False
+            elif key == 17:
                 running = False
             elif key == ord(' '):
                 self.player.playing = not self.player.playing
                 if self.player.playing and self.player.metronome_active:
                     self.player.cycle_counter = self.player.current_step
                     self.player.beat_counter = 0 if self.player.current_step == 0 else (self.player.current_step - 1) // 4
+                if self.player.playing:
+                    self.player.play_pattern()
+                else:
+                    self.player.stop_pattern()
                 self.show_status("Playing" if self.player.playing else "Paused")
             elif key == ord('v'):
-                self.player.stop()
+                self.player.stop_all()
                 self.show_status("Stopped")
             elif key == curses.KEY_LEFT:
                 if  self.curmode == "Normal"\
@@ -284,18 +436,18 @@ class MainApp(object):
                 if self.last_played_pad is not None:
                     sounds[self.last_played_pad].play()
             elif key == 12:  # Ctrl + l
-                self.player.metronome_active = True
-                self.player.beat_counter = 0
+                self.player.play_click()
             elif key == ord('L'):  # Shift + l
-                self.player.metronome_active = False
+                self.player.stop_click()
+            
             elif key == curses.KEY_F4:  # Touche F4 pour charger pattern_01
                 self.player.pattern = [row[:] for row in pattern_01]
                 self.show_status("Pattern 01 chargé")
             elif key == ord('+'):  # Augmenter le BPM
-                self.player.change_bpm(self.player.bpm + 5)
+                self.player.set_bpm(min(600, self.player.bpm + 5))
                 self.show_status(f"BPM: {self.player.bpm}")
             elif key == ord('-'):  # Diminuer le BPM
-                self.player.change_bpm(max(5, self.player.bpm - 5))
+                self.player.set_bpm(max(5, self.player.bpm - 5))
                 self.show_status(f"BPM: {self.player.bpm}")
 
             elif key == 9:  # Tab pour passer d'un mode à un autre
@@ -314,10 +466,14 @@ class MainApp(object):
                     beep()
 
             # Jouer le pattern et le metronome
+            """
             if self.player.playing or self.player.metronome_active:
                 if self.player.playing:
-                    self.player.play_pattern(sounds)
-                self.player.update()
+                    # self.player.play_pattern(sounds)
+                    self.player.play()
+                    # self.player.update()
+            """
+            beep()
 
         pygame.quit()
 
@@ -335,4 +491,5 @@ if __name__ == "__main__":
     curses.wrapper(main)
 
 #----------------------------------------
+
 
