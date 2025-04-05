@@ -8,12 +8,8 @@
 import os
 import time
 import curses
-import pygame
 import threading
 from soundmanager import SoundManager
-# Initialiser Pygame
-pygame.init()
-
 DEBUG = 1
 curdir = os.path.dirname(__file__) # directory for the current script
 _basedir = os.path.dirname(curdir) # base directory for the application
@@ -21,15 +17,6 @@ _mediadir = os.path.join(_basedir, "media")
 _medialist = [os.path.join(_mediadir, f"{i}.wav") for i in range(1, 17)]
 _clickname1 = os.path.join(_mediadir, "hi_wood_block_mono.wav")
 _clickname2 = os.path.join(_mediadir, "low_wood_block_mono.wav")
-
-# Charger les sons de batterie
-sounds = [
-    pygame.mixer.Sound(f"{_mediadir}/{i}.wav") for i in range(1, 17)
-]
-
-# Son du métronome
-metronome_sound1 = pygame.mixer.Sound(f"{_mediadir}/hi_wood_block_mono.wav")
-metronome_sound2 = pygame.mixer.Sound(f"{_mediadir}/low_wood_block_mono.wav")
 
 # Mappage des touches du clavier aux pads
 key_mapping_1 = {
@@ -208,89 +195,14 @@ class DrumPlayer(object):
 
     #------------------------------------------------------------------------------
 
-    def play_metronome(self):
-        """Joue le son du métronome."""
-        if self.beat_counter == 0:
-            metronome_sound1.play()
-        else:
-            metronome_sound2.play()
-
-    #----------------------------------------
- 
     def set_volume(self, volume):
         self.volume = volume
         self.sound_man.set_volume(volume)
 
     #------------------------------------------------------------------------------
 
-
 #=========================================
 
-class Player(object):
-    def __init__(self, bpm=100):
-        self.bpm = bpm
-        self.step_duration = 60.0 / bpm / 4
-        self.current_step = 0
-        self.beat_counter = 0
-        self.cycle_counter = 0
-        self.playing = False
-        self.clicking = False
-        self.pattern = pattern
-
-    #----------------------------------------
-
-    def play_pattern(self, sounds):
-        """Joue l'étape actuelle du motif."""
-        for i in range(16):
-            if self.pattern[i][self.current_step]:
-                sounds[i].play()
-
-    #----------------------------------------
-
-    def play_metronome(self):
-        """Joue le son du métronome."""
-        if self.beat_counter == 0:
-            metronome_sound1.play()
-        else:
-            metronome_sound2.play()
-
-    #----------------------------------------
-    
-    def stop(self):
-        """ Stop pattern and metronome """
-        self.playing = False
-        self.clicking = False
-        self.current_step = 0
-        self.beat_counter =0
-        self.cycle_counter =0
-
-    #----------------------------------------
-
-    def change_bpm(self, new_bpm):
-        """Change le tempo du motif."""
-        self.bpm = new_bpm
-        self.step_duration = 60.0 / self.bpm / 4
-
-    #----------------------------------------
-
-    def update(self):
-        """Met à jour les compteurs et joue le métronome si nécessaire."""
-        if self.clicking and self.cycle_counter % 4 == 0:
-            self.play_metronome()
-            self.beat_counter = (self.beat_counter + 1) % 4
-
-        self.cycle_counter = (self.cycle_counter + 1) % 16
-        if self.cycle_counter == 0:
-            self.beat_counter = 0
-
-        if self.playing:
-            self.current_step = (self.current_step + 1) % 16
-
-        time.sleep(self.step_duration)
-
-    #----------------------------------------
-
-#=========================================
 
 class MainApp(object):
     def __init__(self, stdscr):
@@ -474,17 +386,8 @@ class MainApp(object):
                 else:
                     beep()
 
-            # Jouer le pattern et le metronome
-            """
-            if self.player.playing or self.player.clicking:
-                if self.player.playing:
-                    # self.player.play_pattern(sounds)
-                    self.player.play()
-                    # self.player.update()
-            """
             beep()
 
-        pygame.quit()
 
     #----------------------------------------
 
@@ -500,5 +403,4 @@ if __name__ == "__main__":
     curses.wrapper(main)
 
 #----------------------------------------
-
 
