@@ -50,8 +50,10 @@ class SoundManager(object):
     #----------------------------------------
  
     def set_volume(self, volume):
-        for sound in self.sounds.values():
+        for sound in self.drum_sounds:
             sound.set_volume(volume / 100)
+        self.sound_click1.set_volume(volume / 100)
+        self.sound_click2.set_volume(volume / 100)
 
     #----------------------------------------
 

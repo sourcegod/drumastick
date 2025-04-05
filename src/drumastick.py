@@ -83,7 +83,7 @@ class DrumPlayer(object):
         self.step_duration = 60.0 / self.bpm / 4
         self.beat_counter =0
         self.cycle_counter =0
-        self.volume = 0.8
+        self.volume = 80
         # self.drum_pads = [[False] * 16 for _ in range(16)]
         self.pattern = pattern
 
@@ -365,11 +365,18 @@ class MainApp(object):
                 self.player.pattern = [row[:] for row in pattern_01]
                 self.show_status("Pattern 01 chargé")
             elif key == ord('+'):  # Augmenter le BPM
+                self.player.set_volume(min(100, self.player.volume + 10))
+                self.show_status(f"Volume: {self.player.volume}")
+            elif key == ord('-'):  # Diminuer le BPM
+                self.player.set_volume(max(0, self.player.volume - 10))
+                self.show_status(f"Volume: {self.player.volume}")
+            elif key == ord('('):  # Augmenter le BPM
                 self.player.set_bpm(min(600, self.player.bpm + 5))
                 self.show_status(f"BPM: {self.player.bpm}")
-            elif key == ord('-'):  # Diminuer le BPM
+            elif key == ord(')'):  # Diminuer le BPM
                 self.player.set_bpm(max(5, self.player.bpm - 5))
                 self.show_status(f"BPM: {self.player.bpm}")
+
 
             elif key == 9:  # Tab pour passer d'un mode à un autre
                 if self.mode_index < len(self.mode_lst) -1:
