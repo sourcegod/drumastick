@@ -5,8 +5,7 @@
     Date: Mon, 31/03/2025
     Author: Coolbrother
 """
-
-from os import path
+import os
 import time
 import curses
 import pygame
@@ -16,9 +15,12 @@ from soundmanager import SoundManager
 pygame.init()
 
 DEBUG = 1
-curdir = path.dirname(__file__) # directory for the current script
-_basedir = path.dirname(curdir) # base directory for the application
-_mediadir = path.join(_basedir, "media")
+curdir = os.path.dirname(__file__) # directory for the current script
+_basedir = os.path.dirname(curdir) # base directory for the application
+_mediadir = os.path.join(_basedir, "media")
+_medialist = [os.path.join(_mediadir, f"{i}.wav") for i in range(1, 17)]
+_clickname1 = os.path.join(_mediadir, "hi_wood_block_mono.wav")
+_clickname2 = os.path.join(_mediadir, "low_wood_block_mono.wav")
 
 # Charger les sons de batterie
 sounds = [
@@ -102,7 +104,7 @@ class DrumPlayer(object):
     def start_thread(self):
         if self._play_thread: return
         self.stop_event.clear()
-        self._play_thread = threading.Thread(target=self._run)
+        self._play_thread = threading.Thread(target=self._run_thread)
         self._play_thread.start()
 
     #------------------------------------------------------------------------------
@@ -171,7 +173,7 @@ class DrumPlayer(object):
 
     #------------------------------------------------------------------------------
 
-    def _run(self):
+    def _run_thread(self):
         while (self.playing or self.clicking) and not self.stop_event.is_set():
             if self.playing:
                 # self.step_duration = 60 / self.bpm / 4 # Temporary
@@ -186,7 +188,7 @@ class DrumPlayer(object):
                 self.current_step = (self.current_step +1) % 16
  
             if self.clicking and self.cycle_counter % 4 == 0:
-                self.play_metronome()
+                self.sound_man.play_metronome(self.beat_counter)
                 self.beat_counter = (self.beat_counter + 1) % 4
 
             self.cycle_counter = (self.cycle_counter + 1) % 16
@@ -293,8 +295,9 @@ class Player(object):
 class MainApp(object):
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        sound_manager = SoundManager()
-        self.player = DrumPlayer(sound_manager)
+        sound_man = SoundManager(_medialist, _clickname1, _clickname2)
+        sound_man.load_sounds()
+        self.player = DrumPlayer(sound_man)
         # self.player = Player()
         self.cursor_position = [0, 0]
         self.last_played_pad = self.cursor_position[0]
