@@ -11,7 +11,7 @@ import time
 import curses
 import pygame
 import threading
-
+from soundmanager import SoundManager
 # Initialiser Pygame
 pygame.init()
 
@@ -180,8 +180,8 @@ class DrumPlayer(object):
                         return
                     # self.ui_app.show_status(f"Playing line: {i}")
                     if self.pattern[i][self.current_step]:
-                        # self.sound_man.play_sound(snd)
-                        sounds[i].play()
+                        self.sound_man.play_sound(i)
+                        # sounds[i].play()
                 # avance le sequencer d'un pas
                 self.current_step = (self.current_step +1) % 16
  
@@ -293,7 +293,8 @@ class Player(object):
 class MainApp(object):
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.player = DrumPlayer()
+        sound_manager = SoundManager()
+        self.player = DrumPlayer(sound_manager)
         # self.player = Player()
         self.cursor_position = [0, 0]
         self.last_played_pad = self.cursor_position[0]
