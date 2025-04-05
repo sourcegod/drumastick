@@ -88,7 +88,7 @@ class DrumPlayer(object):
         self.sound_man = sound_manager
         self.ui_app = ui_app
         self.playing = False
-        self.metronome_active = False
+        self.clicking = False
         self.bpm = 100
         self.current_step =0
         self.step_duration = 60.0 / self.bpm / 4
@@ -118,7 +118,7 @@ class DrumPlayer(object):
 
     def play_pattern(self):
         clicked =0
-        if self.metronome_active:
+        if self.clicking:
             self.stop_thread()
             self.stop_click()
             clicked =1
@@ -132,14 +132,14 @@ class DrumPlayer(object):
 
     def stop_pattern(self):
         self.playing = False
-        if not self.metronome_active:
+        if not self.clicking:
             self.stop_thread()
            
     #------------------------------------------------------------------------------
 
 
     def play_click(self):
-        self.metronome_active = True
+        self.clicking = True
         if self.playing:
             self.cycle_counter = self.current_step
             if self.cycle_counter == 0: 
@@ -153,7 +153,7 @@ class DrumPlayer(object):
     #------------------------------------------------------------------------------
     
     def stop_click(self):
-        self.metronome_active = False
+        self.clicking = False
         if not self.playing:
             self.stop_thread()
         self.beat_counter =0
@@ -163,7 +163,7 @@ class DrumPlayer(object):
     
     def stop_all(self):      
         self.playing = False
-        self.metronome_active = False
+        self.clicking = False
         self.stop_thread()
         self.current_step =0
         self.beat_counter =0
@@ -172,7 +172,7 @@ class DrumPlayer(object):
     #------------------------------------------------------------------------------
 
     def _run(self):
-        while (self.playing or self.metronome_active) and not self.stop_event.is_set():
+        while (self.playing or self.clicking) and not self.stop_event.is_set():
             if self.playing:
                 # self.step_duration = 60 / self.bpm / 4 # Temporary
                 for i in range(16):
@@ -185,7 +185,7 @@ class DrumPlayer(object):
                 # avance le sequencer d'un pas
                 self.current_step = (self.current_step +1) % 16
  
-            if self.metronome_active and self.cycle_counter % 4 == 0:
+            if self.clicking and self.cycle_counter % 4 == 0:
                 self.play_metronome()
                 self.beat_counter = (self.beat_counter + 1) % 4
 
@@ -232,7 +232,7 @@ class Player(object):
         self.beat_counter = 0
         self.cycle_counter = 0
         self.playing = False
-        self.metronome_active = False
+        self.clicking = False
         self.pattern = pattern
 
     #----------------------------------------
@@ -257,7 +257,7 @@ class Player(object):
     def stop(self):
         """ Stop pattern and metronome """
         self.playing = False
-        self.metronome_active = False
+        self.clicking = False
         self.current_step = 0
         self.beat_counter =0
         self.cycle_counter =0
@@ -273,7 +273,7 @@ class Player(object):
 
     def update(self):
         """Met à jour les compteurs et joue le métronome si nécessaire."""
-        if self.metronome_active and self.cycle_counter % 4 == 0:
+        if self.clicking and self.cycle_counter % 4 == 0:
             self.play_metronome()
             self.beat_counter = (self.beat_counter + 1) % 4
 
@@ -359,8 +359,8 @@ class MainApp(object):
                     self.player.stop_pattern()
                 self.show_status("Playing" if self.player.playing else "Paused")
             elif key == ord('c'):
-                self.player.metronome_active = not self.player.metronome_active
-                if self.player.metronome_active:
+                self.player.clicking = not self.player.clicking
+                if self.player.clicking:
                     self.player.play_click()
                 else:
                     self.player.stop_click()
@@ -472,7 +472,7 @@ class MainApp(object):
 
             # Jouer le pattern et le metronome
             """
-            if self.player.playing or self.player.metronome_active:
+            if self.player.playing or self.player.clicking:
                 if self.player.playing:
                     # self.player.play_pattern(sounds)
                     self.player.play()
