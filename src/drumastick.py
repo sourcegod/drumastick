@@ -163,7 +163,6 @@ class DrumPlayer(object):
     def _run_thread(self):
         while (self.playing or self.clicking) and not self.stop_event.is_set():
             if self.playing:
-                # self.step_duration = 60 / self.bpm / 4 # Temporary
                 for i in range(16):
                     if self.stop_event.is_set():
                         return
@@ -186,6 +185,11 @@ class DrumPlayer(object):
             # attendre le temps d'un pas
             time.sleep(self.step_duration)
         # self.ui_app.show_status("Stopped Player")
+
+    #------------------------------------------------------------------------------
+
+    def play_sound(self, index):
+        self.sound_man.play_sound(index)
 
     #------------------------------------------------------------------------------
 
@@ -306,7 +310,7 @@ class MainApp(object):
                     if self.cursor_position[0] > 0:
                         self.cursor_position[0] -= 1
                         if self.pad_auto_played:
-                            sounds[self.cursor_position[0]].play()
+                            self.player.play_sound(self.cursor_position[0])
                     else:
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
@@ -316,7 +320,7 @@ class MainApp(object):
                     if self.cursor_position[0] < 15:
                         self.cursor_position[0] += 1
                         if self.pad_auto_played:
-                            sounds[self.cursor_position[0]].play()
+                            self.player.play_sound(self.cursor_position[0])
                     else:
                         beep()
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
@@ -324,6 +328,8 @@ class MainApp(object):
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
                     self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = True
+                    if self.pad_auto_played:
+                        self.player.play_sound(self.cursor_position[0])
                     self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
             elif key == curses.KEY_BACKSPACE:
                 if  self.curmode == "Normal"\
@@ -333,7 +339,7 @@ class MainApp(object):
             # Pads Audition
             elif key in key_mapping_1\
                     and self.curmode == "Normal":
-                sounds[key_mapping_1[key]].play()
+                self.player.play_sound(key_mapping_1[key])
                 self.last_played_pad = key_mapping_1[key]
             
             # """
@@ -350,12 +356,13 @@ class MainApp(object):
                 self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
             # """
 
-            elif key == ord('l'):
-                sounds[self.cursor_position[0]].play()
-                self.last_played_pad = self.cursor_position[0]
-            elif key == ord('m'):
+            elif key == ord('l'): # play current pad
+                index = self.cursor_position[0]
+                self.player.play_sound(index)
+                self.last_played_pad = index
+            elif key == ord('m'): # play last Pad
                 if self.last_played_pad is not None:
-                    sounds[self.last_played_pad].play()
+                    self.player.play_sound(self.last_played_pad)
             elif key == 12:  # Ctrl + l
                 self.player.play_click()
             elif key == ord('L'):  # Shift + l
@@ -393,7 +400,7 @@ class MainApp(object):
                 else:
                     beep()
 
-            beep()
+            # beep()
 
 
     #----------------------------------------
