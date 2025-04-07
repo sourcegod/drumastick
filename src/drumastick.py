@@ -5,6 +5,7 @@
     Date: Mon, 31/03/2025
     Author: Coolbrother
 """
+
 import os
 import time
 import curses
@@ -344,7 +345,6 @@ class MainApp(object):
                 self.player.play_sound(key_mapping_1[key])
                 self.player.last_played_pad = key_mapping_1[key]
             
-            # """
             # Pads selection
             elif key in key_mapping_1\
                     and self.curmode == "Select":
@@ -354,9 +354,9 @@ class MainApp(object):
             # Pads deselection
             elif key in key_mapping_2\
                     and self.curmode == "Select":
-                self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] = False
+                        # self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] = False
+                self.player.pattern[self.cursor_pos[0]][key_mapping_2[key]] = False
                 self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: Désactivé")
-            # """
 
             elif key == ord('l'): # play current pad
                 index = self.cursor_pos[0]
