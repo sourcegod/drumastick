@@ -86,6 +86,8 @@ class DrumPlayer(object):
         self.volume = 80
         # self.drum_pads = [[False] * 16 for _ in range(16)]
         self.pattern = pattern
+        self.last_played_pad =0
+        self.auto_played_pad = True
 
     #------------------------------------------------------------------------------
     def start_thread(self):
@@ -215,9 +217,9 @@ class MainApp(object):
         sound_man.load_sounds()
         self.player = DrumPlayer(sound_man)
         # self.player = Player()
-        self.cursor_position = [0, 0]
-        self.last_played_pad = self.cursor_position[0]
-        self.pad_auto_played = True
+        self.cursor_pos = [0, 0]
+        self.player.last_played_pad = self.cursor_pos[0]
+        self.player.auto_played_pad = True
         self.mode_lst = ["Normal", "Select", "Transport"]  # Liste des modes
         self.mode_index = 0  # Index du mode actuel
         self.curmode = self.mode_lst[self.mode_index] # le mode courant
@@ -247,7 +249,7 @@ class MainApp(object):
                     self.stdscr.addch(i + 1, j * 2, '#')
                 else:
                     self.stdscr.addch(i + 1, j * 2, '.')
-        self.stdscr.addch(self.cursor_position[0] + 1, self.cursor_position[1] * 2, 'X')
+        self.stdscr.addch(self.cursor_pos[0] + 1, self.cursor_pos[1] * 2, 'X')
         self.stdscr.refresh()
 
     #----------------------------------------
@@ -291,78 +293,78 @@ class MainApp(object):
             elif key == curses.KEY_LEFT:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    if self.cursor_position[1] > 0:
-                        self.cursor_position[1] -= 1
+                    if self.cursor_pos[1] > 0:
+                        self.cursor_pos[1] -= 1
                     else:
                         beep()
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: {'Activé' if self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] else 'Désactivé'}")
             elif key == curses.KEY_RIGHT:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    if self.cursor_position[1] < 15:
-                        self.cursor_position[1] += 1
+                    if self.cursor_pos[1] < 15:
+                        self.cursor_pos[1] += 1
                     else:
                         beep()
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: {'Activé' if self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] else 'Désactivé'}")
             elif key == curses.KEY_UP:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    if self.cursor_position[0] > 0:
-                        self.cursor_position[0] -= 1
-                        if self.pad_auto_played:
-                            self.player.play_sound(self.cursor_position[0])
+                    if self.cursor_pos[0] > 0:
+                        self.cursor_pos[0] -= 1
+                        if self.player.auto_played_pad:
+                            self.player.play_sound(self.cursor_pos[0])
                     else:
                         beep()
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: {'Activé' if self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] else 'Désactivé'}")
             elif key == curses.KEY_DOWN:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    if self.cursor_position[0] < 15:
-                        self.cursor_position[0] += 1
-                        if self.pad_auto_played:
-                            self.player.play_sound(self.cursor_position[0])
+                    if self.cursor_pos[0] < 15:
+                        self.cursor_pos[0] += 1
+                        if self.player.auto_played_pad:
+                            self.player.play_sound(self.cursor_pos[0])
                     else:
                         beep()
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: {'Activé' if self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] else 'Désactivé'}")
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: {'Activé' if self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] else 'Désactivé'}")
             elif key == curses.KEY_ENTER or key == 10:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = True
-                    if self.pad_auto_played:
-                        self.player.play_sound(self.cursor_position[0])
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
+                    self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] = True
+                    if self.player.auto_played_pad:
+                        self.player.play_sound(self.cursor_pos[0])
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: Activé")
             elif key == curses.KEY_BACKSPACE:
                 if  self.curmode == "Normal"\
                         or self.curmode == "Select":
-                    self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
-                    self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
+                    self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] = False
+                    self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: Désactivé")
             # Pads Audition
             elif key in key_mapping_1\
                     and self.curmode == "Normal":
                 self.player.play_sound(key_mapping_1[key])
-                self.last_played_pad = key_mapping_1[key]
+                self.player.last_played_pad = key_mapping_1[key]
             
             # """
             # Pads selection
             elif key in key_mapping_1\
                     and self.curmode == "Select":
-                self.player.pattern[self.cursor_position[0]][key_mapping_1[key]] = True
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Activé")
+                self.player.pattern[self.cursor_pos[0]][key_mapping_1[key]] = True
+                self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: Activé")
 
             # Pads deselection
             elif key in key_mapping_2\
                     and self.curmode == "Select":
-                self.player.pattern[self.cursor_position[0]][self.cursor_position[1]] = False
-                self.show_status(f"Pad {self.cursor_position[0] + 1}/{self.cursor_position[1] + 1}: Désactivé")
+                self.player.pattern[self.cursor_pos[0]][self.cursor_pos[1]] = False
+                self.show_status(f"Pad {self.cursor_pos[0] + 1}/{self.cursor_pos[1] + 1}: Désactivé")
             # """
 
             elif key == ord('l'): # play current pad
-                index = self.cursor_position[0]
+                index = self.cursor_pos[0]
                 self.player.play_sound(index)
-                self.last_played_pad = index
+                self.player.last_played_pad = index
             elif key == ord('m'): # play last Pad
-                if self.last_played_pad is not None:
-                    self.player.play_sound(self.last_played_pad)
+                if self.player.last_played_pad is not None:
+                    self.player.play_sound(self.player.last_played_pad)
             elif key == 12:  # Ctrl + l
                 self.player.play_click()
             elif key == ord('L'):  # Shift + l
